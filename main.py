@@ -6,7 +6,7 @@ from urllib import parse
 
 from requests import HTTPError
 
-DEFAULT_URL = 'https://block.energized.pro/blu/formats/rpz.txt'
+DEFAULT_URL = 'https://raw.githubusercontent.com/badmojr/1Hosts/master/Lite/rpz.txt'
 DEFAULT_OUTPUT_FILE = '/usr/local/etc/namedb/rpz.localhost'
 DEFAULT_ALLOW_LIST_FILE = '/usr/local/etc/namedb/rpz-allowlist'
 MAX_DOMAIN_LENGTH = 240
