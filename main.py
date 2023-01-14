@@ -1,12 +1,12 @@
 #!/usr/bin/env python3.8
-from abc import ABC, abstractmethod
-from typing import TextIO
-
-import requests
 import sys
+from abc import ABC, abstractmethod
 from argparse import ArgumentParser
+from time import time
+from typing import TextIO
 from urllib import parse
 
+import requests
 from requests import HTTPError
 
 """
@@ -96,11 +96,12 @@ class PassThruRpzConverter(RpzConverter):
 
 class DomainConverter(RpzConverter):
     """
-    Convert from a hash-commented, domain-per-line text file to an RPZ file.
+    Convert from a hash-commented, domain-per-line text file to an RPZ file.  Generates a barebones zone file
+    header using the current epoch time as the serial number.
     """
 
-    PREAMBLE = '''$TTL 2h
-@ IN SOA localhost. root.localhost. (1 6h 1h 1w 2h)
+    PREAMBLE = f'''$TTL 2h
+@ IN SOA localhost. root.localhost. ({int(time())} 6h 1h 1w 2h)
   IN NS  localhost.
 '''
 
