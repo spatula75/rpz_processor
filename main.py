@@ -11,7 +11,8 @@ from requests import HTTPError
 
 """
 Retrieve a DNS blackhole list from a given URL, optionally apply an allow-list, and write the list out in
-RPZ format.
+RPZ format.  Does not use temporary files nor are remote files read into memory, for maximum performance with
+minimum footprint.
 """
 
 DEFAULT_URL = 'https://raw.githubusercontent.com/badmojr/1Hosts/master/Lite/rpz.txt'
@@ -103,6 +104,9 @@ class DomainConverter(RpzConverter):
   IN NS  localhost.
 '''
 
+    def extract_domain(self, line: str):
+        return line
+
     def before_writing(self, output: TextIO):
         output.write(DomainConverter.PREAMBLE)
         output.write('\n')
@@ -138,6 +142,8 @@ class WildcardDomainConverter(DomainConverter):
     output both the wildcard line, and the bare domain line as well; ie, for `*.example.com`,
     RRs for both `*.example.com` and `example.com` will be written.
     """
+    def extract_domain(self, line: str):
+        return line[2:] if line[0:2] == '*.' else line
 
     def write_line(self, output: TextIO, line: str):
         # convert hashes to semicolons for RPZ
@@ -246,7 +252,7 @@ class RpzProcessor:
                     if domain in self.allow_domains_exact:
                         continue
 
-                    # check for a right-hand match by decomosing the domain into successive subdomains and checking each
+                    # check for a right-hand match by decomposing the domain into successive subdomains and checking each
                     # against the right-mand match set
                     segments = domain.split('.')
                     if len(segments) < 2:  # what nonsense is this?
