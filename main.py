@@ -1,5 +1,10 @@
 #!/usr/bin/env python3.8
 import sys
+import os
+try:
+    import pwd
+except ModuleNotFoundError:
+    pass
 from abc import ABC, abstractmethod
 from argparse import ArgumentParser
 from time import time
@@ -315,8 +320,33 @@ if __name__ == '__main__':
                         type=str,
                         choices=list(converters.keys()),
                         help='Conversion method to use when importing list.')
+    parser.add_argument('-U', metavar='User',
+                        nargs='?',
+                        type=str,
+                        help='Username whose identity should be assumed before running (requires running as root).')
 
     args = parser.parse_args()
+
+    try:
+        uid = os.getuid()
+        if uid == 0:
+            if args.U:
+                try:
+                    user = pwd.getpwnam(args.U)
+                    os.setuid(user.pw_uid)
+                except KeyError:
+                    print(f'User named {args.U} not found!')
+                    exit(1)
+                except NameError:
+                    print(f'-U specified, but no getpwnam support available on this system.')
+                    exit(1)
+            else:
+                print('Please do not run this script as root!  (See also the -U argument.)')
+                exit(1)
+    except AttributeError:
+        if args.U:
+            print('-U specified, but setuid support is not available on this system.')
+            exit(1)
 
     processor = RpzProcessor(converter_choice(args.c))
 
