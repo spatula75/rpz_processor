@@ -9,6 +9,11 @@ from urllib import parse
 
 from requests import HTTPError
 
+"""
+Retrieve a DNS blackhole list from a given URL, optionally apply an allow-list, and write the list out in
+RPZ format.
+"""
+
 DEFAULT_URL = 'https://raw.githubusercontent.com/badmojr/1Hosts/master/Lite/rpz.txt'
 DEFAULT_OUTPUT_FILE = '/usr/local/etc/namedb/rpz.localhost'
 DEFAULT_ALLOW_LIST_FILE = '/usr/local/etc/namedb/rpz-allowlist'
@@ -123,6 +128,36 @@ class DomainConverter(RpzConverter):
         return 'domains'
 
 
+class WildcardDomainConverter(DomainConverter):
+    """
+    Convert from a hash-commented, wildcard-domain-per-line text file to an RPZ file.
+    Specifically, this should be used for wildcard domain files that include the wildcard
+    domain, but not the domain itself.   For example, *.example.com, but not example.com.
+
+    Because BIND RPZ does not match `example.com` on `*.example.com`, it is necessary to
+    output both the wildcard line, and the bare domain line as well; ie, for `*.example.com`,
+    RRs for both `*.example.com` and `example.com` will be written.
+    """
+
+    def write_line(self, output: TextIO, line: str):
+        # convert hashes to semicolons for RPZ
+        if line[0] == '#':  # Faster than line.startswith('#')
+            line = line.replace('#', ';', 1)  # Faster than ';' + line[1:]
+            output.write(line)
+            output.write('\n')
+        else:
+            output.write(line)
+            output.write(' CNAME .\n')
+            # For wildcard domains, also write out the bare domain for BIND.
+            if line[0:2] == '*.':
+                output.write(line[2:])
+                output.write(' CNAME .\n')
+
+    @staticmethod
+    def get_name():
+        return 'wildcards'
+
+
 class RpzProcessor:
     """
     Class for importing a Response Policy Zone (RPZ) file from a URL, optionally applying an Allow List to ignore
@@ -234,7 +269,13 @@ class RpzProcessor:
                 self.converter.after_writing(output)
 
 
-converters = {clazz.get_name(): clazz() for clazz in RpzConverter.__subclasses__()}
+def all_subclasses(cls):
+    for subclass in cls.__subclasses__():
+        yield from all_subclasses(subclass)
+        yield subclass
+
+
+converters = {clazz.get_name(): clazz() for clazz in all_subclasses(RpzConverter)}
 
 
 def converter_choice(choice: str):
