@@ -1,8 +1,10 @@
 import requests
 from requests import HTTPError
 
-from main import MAX_DOMAIN_LENGTH
 from converter import RpzConverter
+
+
+MAX_DOMAIN_LENGTH = 240
 
 
 class RpzProcessor:

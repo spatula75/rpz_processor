@@ -36,7 +36,7 @@ fi
 echo Using interpreter at `which ${PYTHON}`
 
 # Run the RPZ processor as the bind user
-${PYTHON} lib/main.py -U bind -c wildcards -u https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/multi.txt
+PYTHONPATH=lib ${PYTHON} main.py -U bind -c wildcards -u https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/multi.txt
 
 deactivate
 
